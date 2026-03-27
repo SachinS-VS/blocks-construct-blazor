@@ -8,6 +8,7 @@
     <Project Path="src/Client/Client.csproj" />
     <Project Path="src/Server/Server.csproj" />
     <Project Path="src/Services/Services.csproj" Id="1ebb85fc-e644-43a4-a7c7-b987122f1c7e" />
+    <Project Path="src/Test/Test.csproj" Id="af96f6dd-0fee-4244-8703-a5f9d7882e86" />
     <Project Path="src/Worker/Worker.csproj" Id="4331f255-dac1-4b5f-a8a9-60de4f768f67" />
   </Folder>
 </Solution>

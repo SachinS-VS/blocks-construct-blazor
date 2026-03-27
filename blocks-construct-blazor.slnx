@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Client/Client.csproj" />
+    <Project Path="src/Server/Server.csproj" />
+    <Project Path="src/Services/Services.csproj" Id="1ebb85fc-e644-43a4-a7c7-b987122f1c7e" />
+    <Project Path="src/Worker/Worker.csproj" Id="4331f255-dac1-4b5f-a8a9-60de4f768f67" />
+  </Folder>
+</Solution>

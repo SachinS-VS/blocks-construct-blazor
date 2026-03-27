@@ -5,7 +5,7 @@ A SELISE Blocks Blazor WASM application with Interactive Auto rendering. Built w
 ## Stack
 
 - **Frontend**: Blazor WASM (.NET 10), Tailwind CSS v4
-- **Backend**: ASP.NET Core 10, REST API (ApiController), Swagger/OpenAPI
+- **Backend**: ASP.NET Core 10 (single host serving UI + API), REST API (ApiController), Swagger/OpenAPI
 
 ## Folder Structure
 
@@ -19,7 +19,7 @@ src/
 │       ├── Auth/LoginPage.razor
 │       ├── Dashboard/DashboardPage.razor
 │       └── Home/HomePage.razor
-├── Server/                          # ASP.NET Core host
+├── Server/                          # Single host for UI and API
 │   ├── Components/Layout/           # App.razor, MainLayout, Routes, etc.
 │   ├── Controllers/                 # [ApiController] REST endpoints
 │   └── Extensions/                  # DI registration (AddApplicationServices)
@@ -37,20 +37,18 @@ src/
 ## Run the Project
 
 ```bash
-cd src/Server
-dotnet watch
+dotnet watch --project src/Server
 ```
 
-The app will be available at `https://localhost:5001` (or the port shown in the terminal).
+The app runs on `https://localhost:7075` (or the URL shown in terminal).
 
 ## Available Interfaces
 
 | Interface | URL |
 |-----------|-----|
-| Home | `https://localhost:5001/` |
-| Login | `https://localhost:5001/login` |
-| Dashboard | `https://localhost:5001/dashboard` |
-| Swagger | `https://localhost:5001/swagger` *(Development only)* |
+| Home | `https://localhost:7075/` |
+| Login | `https://localhost:7075/login` |
+| Dashboard | `https://localhost:7075/dashboard` |
 
 ## API Endpoints
 

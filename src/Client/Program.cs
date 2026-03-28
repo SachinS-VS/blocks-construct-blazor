@@ -11,10 +11,12 @@ var xBlocksKey = builder.Configuration["ApiClient:XBlocksKey"];
 
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, AppAuthStateProvider>();
 builder.Services.AddScoped<AppAuthStateProvider>();
 builder.Services.AddTransient<AuthTokenHandler>();
 builder.Services.AddSingleton<SidebarState>();
+builder.Services.AddScoped<LanguageState>();
 
 builder.Services.AddHttpClient<IAuthService, AuthService>(ConfigureBlocksApiClient)
     .AddHttpMessageHandler<AuthTokenHandler>();
@@ -23,6 +25,9 @@ builder.Services.AddHttpClient<IUserService, UserService>(ConfigureBlocksApiClie
     .AddHttpMessageHandler<AuthTokenHandler>();
 
 builder.Services.AddHttpClient<IInventoryService, InventoryService>(ConfigureBlocksApiClient)
+    .AddHttpMessageHandler<AuthTokenHandler>();
+
+builder.Services.AddHttpClient<ILanguageService, LanguageService>(ConfigureBlocksApiClient)
     .AddHttpMessageHandler<AuthTokenHandler>();
 
 // Default HttpClient for same-host app/API calls with x-blocks-key header.

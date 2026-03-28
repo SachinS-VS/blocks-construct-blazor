@@ -87,7 +87,20 @@ else
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        _currentPath = new Uri(e.Location).AbsolutePath;
+        var nextPath = new Uri(e.Location).AbsolutePath;
+        if (string.Equals(_currentPath, nextPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _currentPath = nextPath;
+
+        // Keep parent expanded when a child route is active after navigation.
+        if (Item.HasChildren && Item.Children.Any(c => _currentPath.StartsWith(c.Path, StringComparison.OrdinalIgnoreCase)))
+        {
+            _childrenOpen = true;
+        }
+
         InvokeAsync(StateHasChanged);
     }
 

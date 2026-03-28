@@ -67,6 +67,14 @@
 		border-color: var(--color-border);
 	}
 
+	button,
+	[role="button"],
+	input[type="button"],
+	input[type="submit"],
+	input[type="reset"] {
+		cursor: pointer;
+	}
+
 	body {
 		font-family: var(--font-sans);
 		background-color: var(--color-background);

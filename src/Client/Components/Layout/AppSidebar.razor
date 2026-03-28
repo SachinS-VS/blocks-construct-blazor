@@ -39,20 +39,6 @@
                 type="button">
             @((MarkupString)SvgIcons.Close)
         </button>
-
-        <button @onclick="Sidebar.Toggle"
-                class="ml-auto hidden rounded p-1 text-medium-emphasis hover:bg-muted hover:text-high-emphasis lg:flex"
-                aria-label="@(Sidebar.IsOpen ? "Collapse sidebar" : "Expand sidebar")"
-                type="button">
-            @if (Sidebar.IsOpen)
-            {
-                @((MarkupString)SvgIcons.CollapseLeft)
-            }
-            else
-            {
-                @((MarkupString)SvgIcons.ExpandRight)
-            }
-        </button>
     </div>
 
     <nav class="scrollbar-hide flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 px-2 py-3"

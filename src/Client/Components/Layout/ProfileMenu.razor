@@ -43,9 +43,9 @@
 
     @if (_isOpen)
     {
-        <div class="fixed inset-0 z-40" @onclick="Close" aria-hidden="true"></div>
+        <div class="fixed inset-0 z-[9998]" @onclick="Close" aria-hidden="true"></div>
 
-        <div class="absolute top-full right-0 z-50 mt-2 w-56 rounded-lg border bg-card shadow-lg"
+        <div class="absolute top-full right-0 z-[9999] mt-2 w-56 rounded-lg border bg-card shadow-lg"
              role="menu"
              @onclick:stopPropagation="true">
             <div class="border-b px-4 py-3">
@@ -118,7 +118,17 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void Toggle() => _isOpen = !_isOpen;
+    private async Task Toggle()
+    {
+        _isOpen = !_isOpen;
+
+        if (_isOpen && !_isProfileLoading && _profile is null)
+        {
+            _isProfileLoading = true;
+            await InvokeAsync(StateHasChanged);
+            await LoadProfileAsync();
+        }
+    }
 
     private void Close() => _isOpen = false;
 

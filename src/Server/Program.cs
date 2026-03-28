@@ -18,6 +18,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, AppAuthStateProvider>();
 builder.Services.AddScoped<AppAuthStateProvider>();
 builder.Services.AddSingleton<SidebarState>();
+builder.Services.AddScoped<LanguageState>();
 builder.Services.AddTransient<AuthTokenHandler>();
 
 builder.Services.AddHttpClient();
@@ -33,6 +34,8 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(ConfigureBlocksApiClie
 builder.Services.AddHttpClient<IUserService, UserService>(ConfigureBlocksApiClient)
     .AddHttpMessageHandler<AuthTokenHandler>();
 builder.Services.AddHttpClient<IInventoryService, InventoryService>(ConfigureBlocksApiClient)
+    .AddHttpMessageHandler<AuthTokenHandler>();
+builder.Services.AddHttpClient<ILanguageService, LanguageService>(ConfigureBlocksApiClient)
     .AddHttpMessageHandler<AuthTokenHandler>();
 
 builder.Services.AddControllers();

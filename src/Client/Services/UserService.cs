@@ -75,6 +75,15 @@ public class UserService(HttpClient http, IConfiguration config) : IUserService
             return null;
         }
 
+        var firstName = ReadString(payload, "firstName");
+        var lastName = ReadString(payload, "lastName");
+        var displayName = ReadString(payload, "fullName", "name", "displayName", "userName", "username");
+
+        if (string.IsNullOrWhiteSpace(firstName) && string.IsNullOrWhiteSpace(lastName) && !string.IsNullOrWhiteSpace(displayName))
+        {
+            firstName = displayName;
+        }
+
         var roles = new List<string>();
         if (TryGetPropertyIgnoreCase(payload, "roles", out var rolesElement) && rolesElement.ValueKind == JsonValueKind.Array)
         {
@@ -114,9 +123,9 @@ public class UserService(HttpClient http, IConfiguration config) : IUserService
         return new UserProfile
         {
             ItemId = ReadString(payload, "itemId"),
-            FirstName = ReadString(payload, "firstName"),
-            LastName = ReadString(payload, "lastName"),
-            Email = ReadString(payload, "email"),
+            FirstName = firstName,
+            LastName = lastName,
+            Email = ReadString(payload, "email", "userName", "username"),
             PhoneNumber = ReadString(payload, "phoneNumber"),
             Roles = roles,
             ProfileImageUrl = ReadString(payload, "profileImageUrl"),
@@ -126,14 +135,29 @@ public class UserService(HttpClient http, IConfiguration config) : IUserService
         };
     }
 
-    private static string ReadString(JsonElement source, string propertyName)
+    private static string ReadString(JsonElement source, params string[] propertyNames)
     {
-        if (!TryGetPropertyIgnoreCase(source, propertyName, out var property) || property.ValueKind == JsonValueKind.Null)
+        foreach (var propertyName in propertyNames)
         {
-            return string.Empty;
+            if (!TryGetPropertyIgnoreCase(source, propertyName, out var property)
+                || property.ValueKind == JsonValueKind.Null)
+            {
+                continue;
+            }
+
+            var value = property.GetString();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
         }
 
-        return property.GetString() ?? string.Empty;
+        return string.Empty;
+    }
+
+    private static string ReadString(JsonElement source, string propertyName)
+    {
+        return ReadString(source, [propertyName]);
     }
 
     private static DateTime ReadDateTime(JsonElement source, string propertyName)

@@ -20,12 +20,22 @@ public class SidebarState
 
     public void OpenMobile()
     {
+        if (IsMobileOpen)
+        {
+            return;
+        }
+
         IsMobileOpen = true;
         NotifyStateChanged();
     }
 
     public void CloseMobile()
     {
+        if (!IsMobileOpen)
+        {
+            return;
+        }
+
         IsMobileOpen = false;
         NotifyStateChanged();
     }

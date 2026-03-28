@@ -2,6 +2,7 @@
 @rendermode InteractiveAuto
 @inject IInventoryService InventoryService
 @inject NavigationManager Nav
+@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>Inventory</PageTitle>
 <RequireClientAuth />
@@ -109,6 +110,10 @@
               OnCancel="() => _showDeleteConfirm = false" />
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+    
+    private AuthenticationState? _authState;
     private List<InventoryItem> _items = [];
     private bool _isLoading = true;
     private int _page;
@@ -122,15 +127,43 @@
     private bool _showDeleteConfirm;
     private System.Timers.Timer? _debounce;
 
-    protected override async Task OnInitializedAsync() => await LoadItems();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        
+        // Wait for authentication state to be available
+        if (AuthStateTask is not null)
+        {
+            _authState = await AuthStateTask;
+        }
+        
+        // Only call API if authenticated
+        if (_authState?.User?.Identity?.IsAuthenticated ?? false)
+        {
+            await LoadItems();
+        }
+    }
 
     private async Task LoadItems()
     {
-        _isLoading = true;
-        var result = await InventoryService.GetItemsAsync(_page, _pageSize, _search, _category, _status);
-        _items = result.Data;
-        _totalCount = result.TotalCount;
-        _isLoading = false;
+        try
+        {
+            _isLoading = true;
+            var result = await InventoryService.GetItemsAsync(_page, _pageSize, _search, _category, _status);
+            _items = result.Data;
+            _totalCount = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading items: {ex.Message}");
+            _items = [];
+            _totalCount = 0;
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private Task OnFilterChanged()

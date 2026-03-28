@@ -1,8 +1,10 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+﻿<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
             <NotAuthorized>
-                <RedirectToLogin />
+                <div class="flex items-center justify-center gap-4 py-24 text-center">
+                    <p class="text-medium-emphasis">You need to be logged in. <a href="/login" class="text-primary hover:underline">Go to login</a></p>
+                </div>
             </NotAuthorized>
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />

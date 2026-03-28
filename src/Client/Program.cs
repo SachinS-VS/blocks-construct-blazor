@@ -6,8 +6,12 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-var apiBaseUrl = builder.Configuration["ApiClient:BaseUrl"] ?? builder.HostEnvironment.BaseAddress;
-var xBlocksKey = builder.Configuration["ApiClient:XBlocksKey"];
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
+    ?? builder.Configuration["ApiClient:BaseUrl"]
+    ?? builder.HostEnvironment.BaseAddress;
+var xBlocksKey = builder.Configuration["ProjectKey"]
+    ?? builder.Configuration["ApiSecurity:XBlocksKey"]
+    ?? builder.Configuration["ApiClient:XBlocksKey"];
 
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddAuthorizationCore();
@@ -30,8 +34,7 @@ builder.Services.AddHttpClient<IDeviceService, DeviceService>(ConfigureBlocksApi
 builder.Services.AddHttpClient<IInventoryService, InventoryService>(ConfigureBlocksApiClient)
     .AddHttpMessageHandler<AuthTokenHandler>();
 
-builder.Services.AddHttpClient<ILanguageService, LanguageService>(ConfigureBlocksApiClient)
-    .AddHttpMessageHandler<AuthTokenHandler>();
+builder.Services.AddHttpClient<ILanguageService, LanguageService>(ConfigureBlocksApiClient);
 
 // Default HttpClient for same-host app/API calls with x-blocks-key header.
 builder.Services.AddScoped(sp =>

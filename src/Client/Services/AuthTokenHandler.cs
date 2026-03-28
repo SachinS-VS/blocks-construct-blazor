@@ -63,6 +63,11 @@ public sealed class AuthTokenHandler(
     private async Task AttachTokenAsync(HttpRequestMessage request)
     {
         var token = await GetAccessTokenAsync();
+        if (string.IsNullOrWhiteSpace(token) && !IsTokenEndpoint(request.RequestUri))
+        {
+            token = await WaitForAccessTokenAsync();
+        }
+
         if (!string.IsNullOrWhiteSpace(token))
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -168,6 +173,23 @@ public sealed class AuthTokenHandler(
         }
 
         return NormalizeToken(await localStorage.GetItemAsStringAsync("accessToken"));
+    }
+
+    private async Task<string?> WaitForAccessTokenAsync()
+    {
+        // Initial hydration can race with the first protected request on app startup.
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var token = await GetAccessTokenAsync();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                return token;
+            }
+
+            await Task.Delay(120);
+        }
+
+        return null;
     }
 
     private async Task<string?> GetRefreshTokenAsync()

@@ -37,8 +37,7 @@ builder.Services.AddHttpClient<IDeviceService, DeviceService>(ConfigureBlocksApi
     .AddHttpMessageHandler<AuthTokenHandler>();
 builder.Services.AddHttpClient<IInventoryService, InventoryService>(ConfigureBlocksApiClient)
     .AddHttpMessageHandler<AuthTokenHandler>();
-builder.Services.AddHttpClient<ILanguageService, LanguageService>(ConfigureBlocksApiClient)
-    .AddHttpMessageHandler<AuthTokenHandler>();
+builder.Services.AddHttpClient<ILanguageService, LanguageService>(ConfigureBlocksApiClient);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -24,7 +24,7 @@ public sealed class LanguageState(
 
     private static readonly Dictionary<string, string[]> RouteModuleMap = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["/"] = ["common"],
+        ["/"] = ["common", "auth"],
         ["/login"] = ["common", "auth"],
         ["/forgot-password"] = ["common", "auth"],
         ["/reset-password"] = ["common", "auth"],

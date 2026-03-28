@@ -18,6 +18,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider, AppAuthStateProvider>();
 builder.Services.AddScoped<AppAuthStateProvider>();
 builder.Services.AddSingleton<SidebarState>();
+builder.Services.AddTransient<AuthTokenHandler>();
 
 builder.Services.AddHttpClient();
 
@@ -27,9 +28,12 @@ var apiBase = builder.Configuration["ApiBaseUrl"]
 var xBlocksKey = builder.Configuration["ApiSecurity:XBlocksKey"]
     ?? builder.Configuration["ApiClient:XBlocksKey"];
 
-builder.Services.AddHttpClient<IAuthService, AuthService>(ConfigureBlocksApiClient);
-builder.Services.AddHttpClient<IUserService, UserService>(ConfigureBlocksApiClient);
-builder.Services.AddHttpClient<IInventoryService, InventoryService>(ConfigureBlocksApiClient);
+builder.Services.AddHttpClient<IAuthService, AuthService>(ConfigureBlocksApiClient)
+    .AddHttpMessageHandler<AuthTokenHandler>();
+builder.Services.AddHttpClient<IUserService, UserService>(ConfigureBlocksApiClient)
+    .AddHttpMessageHandler<AuthTokenHandler>();
+builder.Services.AddHttpClient<IInventoryService, InventoryService>(ConfigureBlocksApiClient)
+    .AddHttpMessageHandler<AuthTokenHandler>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

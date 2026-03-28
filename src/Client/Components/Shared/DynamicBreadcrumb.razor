@@ -1,18 +1,22 @@
 @inject NavigationManager Nav
+@implements IDisposable
 
-<nav aria-label="breadcrumb" class="hidden text-sm text-medium-emphasis sm:block">
-    <ol class="flex items-center gap-1.5">
-        @foreach (var (segment, index) in _segments.Select((s, i) => (s, i)))
+<nav aria-label="Breadcrumb" class="hidden sm:block">
+    <ol class="flex items-center gap-1.5 text-sm text-medium-emphasis">
+        @foreach (var (display, raw, index) in _segments)
         {
             <li class="flex items-center gap-1.5">
                 @if (index < _segments.Count - 1)
                 {
-                    <a href="/@string.Join("/", _rawSegments.Take(index + 1))" class="transition-colors hover:text-primary">@segment</a>
-                    <span class="text-low-emphasis">/</span>
+                    <a href="/@string.Join("/", _segments.Take(index + 1).Select(s => s.Raw))"
+                       class="capitalize transition-colors hover:text-primary">
+                        @display
+                    </a>
+                    <span class="text-low-emphasis" aria-hidden="true">/</span>
                 }
                 else
                 {
-                    <span class="font-semibold text-high-emphasis">@segment</span>
+                    <span class="font-semibold text-high-emphasis capitalize">@display</span>
                 }
             </li>
         }
@@ -20,8 +24,7 @@
 </nav>
 
 @code {
-    private List<string> _segments = [];
-    private List<string> _rawSegments = [];
+    private List<(string Display, string Raw, int Index)> _segments = [];
 
     protected override void OnInitialized()
     {
@@ -38,15 +41,21 @@
     private void ParsePath()
     {
         var path = new Uri(Nav.Uri).AbsolutePath.Trim('/');
-        _rawSegments = path.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
-        _segments = _rawSegments
-            .Select(s => System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(s.Replace("-", " ")))
-            .ToList();
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        if (_segments.Count == 0)
+        if (parts.Length == 0)
         {
-            _segments.Add("Identity Management");
-            _rawSegments.Add("identity-management");
+            parts = ["dashboard"];
         }
+
+        _segments = parts
+            .Select((raw, i) => (
+                Display: raw.Replace("-", " "),
+                Raw: raw,
+                Index: i
+            ))
+            .ToList();
     }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }

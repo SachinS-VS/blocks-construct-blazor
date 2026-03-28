@@ -4,7 +4,7 @@ namespace Client.Models.Profile;
 
 public class UserProfile
 {
-    [JsonPropertyName("userId")]
+    [JsonPropertyName("itemId")]
     public string ItemId { get; set; } = "";
     public string FirstName { get; set; } = "";
     public string? LastName { get; set; }

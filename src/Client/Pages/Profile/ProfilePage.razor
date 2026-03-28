@@ -1,14 +1,9 @@
 @page "/profile"
 @rendermode InteractiveAuto
 @inject IUserService UserService
-@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>My Profile</PageTitle>
 <RequireClientAuth />
-
-@{
-    var isAuthenticated = _authState?.User?.Identity?.IsAuthenticated ?? false;
-}
 
 <div class="flex w-full flex-col">
     <div class="mb-5 flex items-center">
@@ -94,10 +89,6 @@
 }
 
 @code {
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthStateTask { get; set; }
-    
-    private AuthenticationState? _authState;
     private UserProfile? _profile;
     private bool _isLoading = true;
     private string _tab = "general";
@@ -108,18 +99,8 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        
-        // Wait for authentication state to be available
-        if (AuthStateTask is not null)
-        {
-            _authState = await AuthStateTask;
-        }
-        
-        // Only call API if authenticated
-        if (_authState?.User?.Identity?.IsAuthenticated ?? false)
-        {
-            await RefreshProfile();
-        }
+
+        await RefreshProfile();
     }
 
     private async Task RefreshProfile()

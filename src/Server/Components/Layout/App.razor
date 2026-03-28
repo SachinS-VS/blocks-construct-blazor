@@ -5,6 +5,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.classList.add(theme);
+        })();
+    </script>
     <ResourcePreloader />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
@@ -18,12 +24,6 @@
 <body>
     <Routes />
     <ReconnectModal />
-    <script>
-        (function () {
-            var theme = localStorage.getItem('theme') || 'light';
-            document.documentElement.classList.add(theme);
-        })();
-    </script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 

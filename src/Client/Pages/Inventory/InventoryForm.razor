@@ -3,7 +3,6 @@
 @rendermode InteractiveAuto
 @inject IInventoryService InventoryService
 @inject NavigationManager Nav
-@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>@(_isEdit ? "Edit Item" : "Add Item")</PageTitle>
 <RequireClientAuth />
@@ -75,12 +74,8 @@
 </div>
 
 @code {
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthStateTask { get; set; }
-    
     [Parameter] public string? ItemId { get; set; }
 
-    private AuthenticationState? _authState;
     private bool _isEdit => !string.IsNullOrEmpty(ItemId);
     private InventoryFormModel _model = new();
     private string _error = "";
@@ -89,15 +84,8 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        
-        // Wait for authentication state to be available
-        if (AuthStateTask is not null)
-        {
-            _authState = await AuthStateTask;
-        }
-        
-        // Only call API if authenticated
-        if (_authState?.User?.Identity?.IsAuthenticated ?? false && _isEdit)
+
+        if (_isEdit)
         {
             await LoadItemForEdit();
         }

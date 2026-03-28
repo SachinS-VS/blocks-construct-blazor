@@ -16,12 +16,22 @@ public interface IAuthService
     Task<string?> GetAccessTokenAsync();
 }
 
-public class AuthService(HttpClient http, ILocalStorageService localStorage, IConfiguration config) : IAuthService
+public class AuthService(
+    HttpClient http,
+    ILocalStorageService localStorage,
+    IConfiguration config,
+    AppAuthStateProvider authState) : IAuthService
 {
     private string ProjectKey => config["ProjectKey"] ?? config["ApiClient:XBlocksKey"] ?? "";
 
     public async Task<SignInResponse> SignInAsync(string username, string password)
     {
+        if (!string.IsNullOrWhiteSpace(ProjectKey))
+        {
+            http.DefaultRequestHeaders.Remove("x-blocks-key");
+            http.DefaultRequestHeaders.TryAddWithoutValidation("x-blocks-key", ProjectKey);
+        }
+
         var payload = new Dictionary<string, string>
         {
             ["grant_type"] = "password",
@@ -36,8 +46,8 @@ public class AuthService(HttpClient http, ILocalStorageService localStorage, ICo
 
         if (!result.EnableMfa && !string.IsNullOrWhiteSpace(result.AccessToken))
         {
-            await localStorage.SetItemAsStringAsync("accessToken", result.AccessToken);
-            await localStorage.SetItemAsStringAsync("refreshToken", result.RefreshToken ?? "");
+            await SetTokensAsync(result.AccessToken, result.RefreshToken ?? "");
+            authState.NotifyAuthStateChanged();
         }
 
         return result;
@@ -59,8 +69,8 @@ public class AuthService(HttpClient http, ILocalStorageService localStorage, ICo
         var result = await response.Content.ReadFromJsonAsync<SignInResponse>() ?? new SignInResponse();
         if (!string.IsNullOrWhiteSpace(result.AccessToken))
         {
-            await localStorage.SetItemAsStringAsync("accessToken", result.AccessToken);
-            await localStorage.SetItemAsStringAsync("refreshToken", result.RefreshToken ?? "");
+            await SetTokensAsync(result.AccessToken, result.RefreshToken ?? "");
+            authState.NotifyAuthStateChanged();
         }
 
         return result;
@@ -90,15 +100,46 @@ public class AuthService(HttpClient http, ILocalStorageService localStorage, ICo
     {
         try
         {
-            var refreshToken = await localStorage.GetItemAsStringAsync("refreshToken");
+            var refreshToken = NormalizeToken(await localStorage.GetItemAsStringAsync("refresh_token"))
+                ?? NormalizeToken(await localStorage.GetItemAsStringAsync("refreshToken"));
             await http.PostAsJsonAsync("/idp/v1/Authentication/Logout", new { refreshToken });
         }
         finally
         {
+            await localStorage.RemoveItemAsync("access_token");
+            await localStorage.RemoveItemAsync("refresh_token");
             await localStorage.RemoveItemAsync("accessToken");
             await localStorage.RemoveItemAsync("refreshToken");
+            authState.NotifyAuthStateChanged();
         }
     }
 
-    public Task<string?> GetAccessTokenAsync() => localStorage.GetItemAsStringAsync("accessToken").AsTask();
+    public async Task<string?> GetAccessTokenAsync()
+    {
+        var token = NormalizeToken(await localStorage.GetItemAsStringAsync("access_token"));
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        return NormalizeToken(await localStorage.GetItemAsStringAsync("accessToken"));
+    }
+
+    private async Task SetTokensAsync(string accessToken, string refreshToken)
+    {
+        await localStorage.SetItemAsStringAsync("access_token", accessToken);
+        await localStorage.SetItemAsStringAsync("refresh_token", refreshToken);
+        await localStorage.SetItemAsStringAsync("accessToken", accessToken);
+        await localStorage.SetItemAsStringAsync("refreshToken", refreshToken);
+    }
+
+    private static string? NormalizeToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return token;
+        }
+
+        return token.Trim().Trim('"');
+    }
 }

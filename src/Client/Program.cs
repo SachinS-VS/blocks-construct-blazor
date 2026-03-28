@@ -13,17 +13,17 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, AppAuthStateProvider>();
 builder.Services.AddScoped<AppAuthStateProvider>();
-builder.Services.AddScoped<BlocksApiAuthorizationHandler>();
+builder.Services.AddTransient<AuthTokenHandler>();
 builder.Services.AddSingleton<SidebarState>();
 
 builder.Services.AddHttpClient<IAuthService, AuthService>(ConfigureBlocksApiClient)
-    .AddHttpMessageHandler<BlocksApiAuthorizationHandler>();
+    .AddHttpMessageHandler<AuthTokenHandler>();
 
 builder.Services.AddHttpClient<IUserService, UserService>(ConfigureBlocksApiClient)
-    .AddHttpMessageHandler<BlocksApiAuthorizationHandler>();
+    .AddHttpMessageHandler<AuthTokenHandler>();
 
 builder.Services.AddHttpClient<IInventoryService, InventoryService>(ConfigureBlocksApiClient)
-    .AddHttpMessageHandler<BlocksApiAuthorizationHandler>();
+    .AddHttpMessageHandler<AuthTokenHandler>();
 
 // Default HttpClient for same-host app/API calls with x-blocks-key header.
 builder.Services.AddScoped(sp =>

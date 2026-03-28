@@ -4,46 +4,76 @@
 @inject NavigationManager Nav
 
 <div class="relative">
-    <button @onclick="ToggleDropdown" class="flex cursor-pointer items-center gap-2 rounded p-1 hover:bg-muted">
-        <div class="relative h-8 w-8 overflow-hidden rounded-full border border-white shadow-sm">
-            <img src="@(_profile?.ProfileImageUrl ?? "/images/dummy_profile.png")" alt="Profile" class="h-full w-full object-cover" onerror="this.src='/images/dummy_profile.png'" />
+    <button @onclick="Toggle"
+            class="flex cursor-pointer items-center gap-2 rounded-md p-1 transition-colors hover:bg-muted"
+            aria-expanded="@_isOpen"
+            aria-haspopup="true"
+            type="button">
+        <div class="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white shadow-sm">
+            @if (_isProfileLoading)
+            {
+                <div class="h-8 w-8 animate-pulse rounded-full bg-muted"></div>
+            }
+            else
+            {
+                <img src="@(_profile?.ProfileImageUrl ?? "/images/dummy_profile.png")"
+                     alt="Profile"
+                     class="h-full w-full object-cover"
+                     onerror="this.src='/images/dummy_profile.png'" />
+            }
         </div>
 
-        <div class="hidden flex-col text-left leading-tight sm:flex">
-            <span class="text-xs font-semibold text-high-emphasis">@(_profile?.FullName ?? "Loading...")</span>
-            <span class="text-[10px] capitalize text-low-emphasis">@(_profile?.Roles.FirstOrDefault() ?? "")</span>
+        <div class="hidden flex-col items-start leading-tight sm:flex">
+            @if (_isProfileLoading)
+            {
+                <div class="mb-1 h-3 w-24 animate-pulse rounded bg-muted"></div>
+                <div class="h-2.5 w-16 animate-pulse rounded bg-muted"></div>
+            }
+            else
+            {
+                <span class="text-xs font-semibold text-high-emphasis">@(_profile?.FullName ?? "-")</span>
+                <span class="text-[10px] capitalize text-low-emphasis">@(_profile?.Roles.FirstOrDefault() ?? string.Empty)</span>
+            }
         </div>
 
-        @((MarkupString)(_isOpen ? Icons.ChevronUp : Icons.ChevronDown))
+        <span class="text-medium-emphasis transition-transform duration-200 @(_isOpen ? "rotate-180" : string.Empty)">
+            @((MarkupString)SvgIcons.ChevronDown)
+        </span>
     </button>
 
     @if (_isOpen)
     {
-        <div class="fixed inset-0 z-40" @onclick="() => _isOpen = false"></div>
+        <div class="fixed inset-0 z-40" @onclick="Close" aria-hidden="true"></div>
 
-        <div class="absolute bottom-full right-0 z-50 mb-2 w-56 rounded-md border bg-card shadow-lg" @onclick:stopPropagation="true">
+        <div class="absolute top-full right-0 z-50 mt-2 w-56 rounded-lg border bg-card shadow-lg"
+             role="menu"
+             @onclick:stopPropagation="true">
+            <div class="border-b px-4 py-3">
+                <p class="truncate text-sm font-semibold text-high-emphasis">@(_profile?.FullName ?? "-")</p>
+                <p class="truncate text-xs text-medium-emphasis">@(_profile?.Email ?? string.Empty)</p>
+            </div>
+
             <div class="py-1 text-sm">
-                <button @onclick="GoToProfile" class="w-full px-4 py-2 text-left text-high-emphasis hover:bg-muted">My Profile</button>
-                <button disabled class="w-full cursor-not-allowed px-4 py-2 text-left text-medium-emphasis opacity-50">About</button>
-                <button disabled class="w-full cursor-not-allowed px-4 py-2 text-left text-medium-emphasis opacity-50">Privacy Policy</button>
-
-                <div class="my-1 border-t"></div>
-
-                <button @onclick="ToggleTheme" class="flex w-full items-center justify-between px-4 py-2 text-high-emphasis hover:bg-muted">
-                    <span>Theme</span>
-                    @if (_isDark)
-                    {
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                    }
-                    else
-                    {
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9 9 0 1020.354 15.354z"/></svg>
-                    }
+                <button @onclick="GoToProfile"
+                        class="flex w-full items-center gap-2 px-4 py-2 text-left text-high-emphasis transition-colors hover:bg-muted"
+                        role="menuitem"
+                        type="button">
+                    @((MarkupString)SvgIcons.User)
+                    <span>My Profile</span>
                 </button>
 
                 <div class="my-1 border-t"></div>
 
-                <button @onclick="HandleLogout" class="w-full px-4 py-2 text-left font-medium text-red-600 hover:bg-muted">Log Out</button>
+                <button @onclick="HandleLogout"
+                        class="flex w-full items-center gap-2 px-4 py-2 text-left font-medium text-red-600 transition-colors hover:bg-red-50"
+                        role="menuitem"
+                        type="button">
+                    <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                        <line x1="12" y1="2" x2="12" y2="12"/>
+                    </svg>
+                    <span>Log Out</span>
+                </button>
             </div>
         </div>
     }
@@ -52,32 +82,55 @@
 @code {
     private UserProfile? _profile;
     private bool _isOpen;
-    private bool _isDark;
+    private bool _isProfileLoading = true;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        try
+        if (!firstRender)
         {
-            _profile = await UserService.GetCurrentProfileAsync();
+            return;
         }
-        catch
-        {
-        }
+
+        await LoadProfileAsync();
     }
 
-    private void ToggleDropdown() => _isOpen = !_isOpen;
+    private async Task LoadProfileAsync()
+    {
+        // Retry once to tolerate first-render auth/token race after login hydration.
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                _profile = await UserService.GetCurrentProfileAsync();
+                break;
+            }
+            catch
+            {
+                _profile = null;
+                if (attempt == 0)
+                {
+                    await Task.Delay(300);
+                }
+            }
+        }
+
+        _isProfileLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void Toggle() => _isOpen = !_isOpen;
+
+    private void Close() => _isOpen = false;
 
     private void GoToProfile()
     {
-        _isOpen = false;
+        Close();
         Nav.NavigateTo("/profile");
     }
 
-    private void ToggleTheme() => _isDark = !_isDark;
-
     private async Task HandleLogout()
     {
-        _isOpen = false;
+        Close();
         try
         {
             await AuthService.SignOutAsync();

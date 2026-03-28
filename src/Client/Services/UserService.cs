@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using Client.Models.IAM;
 using Client.Models.Profile;
 using Microsoft.Extensions.Configuration;
@@ -38,8 +39,164 @@ public class UserService(HttpClient http, IConfiguration config) : IUserService
             ?? new PagedResult<IamUser>();
     }
 
-    public async Task<UserProfile?> GetCurrentProfileAsync() =>
-        await http.GetFromJsonAsync<UserProfile>("/idp/v1/Iam/GetAccount");
+    public async Task<UserProfile?> GetCurrentProfileAsync()
+    {
+        var response = await http.GetAsync("/idp/v1/Iam/GetAccount");
+        response.EnsureSuccessStatusCode();
+
+        using var stream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(stream);
+
+        var root = document.RootElement;
+        var payload = root;
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            if (TryGetPropertyIgnoreCase(root, "data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Object)
+            {
+                payload = dataElement;
+            }
+            else if (TryGetPropertyIgnoreCase(root, "result", out var resultElement) && resultElement.ValueKind == JsonValueKind.Object)
+            {
+                payload = resultElement;
+            }
+            else if (TryGetPropertyIgnoreCase(root, "account", out var accountElement) && accountElement.ValueKind == JsonValueKind.Object)
+            {
+                payload = accountElement;
+            }
+        }
+
+        return MapAccount(payload);
+    }
+
+    private static UserProfile? MapAccount(JsonElement payload)
+    {
+        if (payload.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var roles = new List<string>();
+        if (TryGetPropertyIgnoreCase(payload, "roles", out var rolesElement) && rolesElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var role in rolesElement.EnumerateArray())
+            {
+                var value = role.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    roles.Add(value);
+                }
+            }
+        }
+
+        if (roles.Count == 0
+            && TryGetPropertyIgnoreCase(payload, "memberships", out var membershipsElement)
+            && membershipsElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var membership in membershipsElement.EnumerateArray())
+            {
+                if (!TryGetPropertyIgnoreCase(membership, "roles", out var memberRoles)
+                    || memberRoles.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (var role in memberRoles.EnumerateArray())
+                {
+                    var value = role.GetString();
+                    if (!string.IsNullOrWhiteSpace(value) && !roles.Contains(value, StringComparer.OrdinalIgnoreCase))
+                    {
+                        roles.Add(value);
+                    }
+                }
+            }
+        }
+
+        return new UserProfile
+        {
+            ItemId = ReadString(payload, "itemId"),
+            FirstName = ReadString(payload, "firstName"),
+            LastName = ReadString(payload, "lastName"),
+            Email = ReadString(payload, "email"),
+            PhoneNumber = ReadString(payload, "phoneNumber"),
+            Roles = roles,
+            ProfileImageUrl = ReadString(payload, "profileImageUrl"),
+            CreatedDate = ReadDateTime(payload, "createdDate"),
+            LastLoggedInTime = ReadNullableDateTime(payload, "lastLoggedInTime"),
+            MfaEnabled = ReadBoolean(payload, "mfaEnabled")
+        };
+    }
+
+    private static string ReadString(JsonElement source, string propertyName)
+    {
+        if (!TryGetPropertyIgnoreCase(source, propertyName, out var property) || property.ValueKind == JsonValueKind.Null)
+        {
+            return string.Empty;
+        }
+
+        return property.GetString() ?? string.Empty;
+    }
+
+    private static DateTime ReadDateTime(JsonElement source, string propertyName)
+    {
+        if (!TryGetPropertyIgnoreCase(source, propertyName, out var property))
+        {
+            return DateTime.MinValue;
+        }
+
+        return property.ValueKind == JsonValueKind.String && property.TryGetDateTime(out var value)
+            ? value
+            : DateTime.MinValue;
+    }
+
+    private static DateTime? ReadNullableDateTime(JsonElement source, string propertyName)
+    {
+        if (!TryGetPropertyIgnoreCase(source, propertyName, out var property)
+            || property.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        return property.ValueKind == JsonValueKind.String && property.TryGetDateTime(out var value)
+            ? value
+            : null;
+    }
+
+    private static bool ReadBoolean(JsonElement source, string propertyName)
+    {
+        if (!TryGetPropertyIgnoreCase(source, propertyName, out var property)
+            || property.ValueKind != JsonValueKind.True && property.ValueKind != JsonValueKind.False)
+        {
+            return false;
+        }
+
+        return property.GetBoolean();
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement source, string propertyName, out JsonElement value)
+    {
+        if (source.ValueKind != JsonValueKind.Object)
+        {
+            value = default;
+            return false;
+        }
+
+        if (source.TryGetProperty(propertyName, out value))
+        {
+            return true;
+        }
+
+        foreach (var property in source.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
 
     public async Task InviteUserAsync(AddUserRequest request)
     {

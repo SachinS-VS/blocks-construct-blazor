@@ -2,7 +2,6 @@
 @rendermode InteractiveAuto
 @inject IInventoryService InventoryService
 @inject NavigationManager Nav
-@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>Inventory</PageTitle>
 <RequireClientAuth />
@@ -110,10 +109,6 @@
               OnCancel="() => _showDeleteConfirm = false" />
 
 @code {
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthStateTask { get; set; }
-    
-    private AuthenticationState? _authState;
     private List<InventoryItem> _items = [];
     private bool _isLoading = true;
     private int _page;
@@ -130,18 +125,8 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        
-        // Wait for authentication state to be available
-        if (AuthStateTask is not null)
-        {
-            _authState = await AuthStateTask;
-        }
-        
-        // Only call API if authenticated
-        if (_authState?.User?.Identity?.IsAuthenticated ?? false)
-        {
-            await LoadItems();
-        }
+
+        await LoadItems();
     }
 
     private async Task LoadItems()

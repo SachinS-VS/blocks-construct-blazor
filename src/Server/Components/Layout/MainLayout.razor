@@ -3,26 +3,17 @@
 <ErrorBoundary>
     <ChildContent>
         <CascadingAuthenticationState>
-            <AuthorizeView>
-                <Authorized>
-                    <div class="flex h-screen overflow-hidden bg-background">
-                        <AppSidebar />
+            <div class="flex h-screen overflow-hidden bg-background">
+                <AppSidebar />
 
-                        <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
-                            <TopNavBar />
+                <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+                    <TopNavBar />
 
-                            <main class="flex-1 overflow-y-auto p-4 md:p-6">
-                                @Body
-                            </main>
-                        </div>
-                    </div>
-                </Authorized>
-                <NotAuthorized>
-                    <main class="min-h-screen bg-background p-4 md:p-6">
+                    <main class="flex-1 overflow-y-auto p-4 md:p-6">
                         @Body
                     </main>
-                </NotAuthorized>
-            </AuthorizeView>
+                </div>
+            </div>
         </CascadingAuthenticationState>
     </ChildContent>
     <ErrorContent>

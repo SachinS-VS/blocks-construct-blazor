@@ -1,80 +1,100 @@
-@inject NavigationManager Nav
 @inject SidebarState Sidebar
 @implements IDisposable
 
 @{
     var desktopWidth = Sidebar.IsOpen ? "lg:w-56" : "lg:w-14";
-    var mobileClass = Sidebar.IsMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0";
+    var mobileTranslate = Sidebar.IsMobileOpen ? "translate-x-0" : "-translate-x-full";
+
+    var integrated = MenuDefinition.Items.Where(i => i.IsIntegrated).ToList();
+    var other = MenuDefinition.Items.Where(i => !i.IsIntegrated).ToList();
 }
 
-<aside class="fixed inset-y-0 left-0 z-30 flex w-56 flex-col border-r bg-card transition-all duration-300 ease-in-out lg:relative lg:z-auto @desktopWidth @mobileClass">
-    <div class="flex h-14 items-center justify-between border-b px-3">
-        @if (Sidebar.IsOpen)
-        {
-            <img src="/images/logo.svg" alt="Logo" class="h-8 w-auto" />
-        }
-        else
-        {
-            <img src="/images/logo_small.svg" alt="Logo" class="mx-auto h-8 w-8" />
-        }
+@if (Sidebar.IsMobileOpen)
+{
+    <div class="fixed inset-0 z-20 bg-black/50 lg:hidden"
+         @onclick="Sidebar.CloseMobile"
+         aria-hidden="true"></div>
+}
 
-        <button @onclick="Sidebar.Toggle" class="hidden rounded p-1 text-medium-emphasis hover:bg-muted lg:flex">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
+<aside class="fixed inset-y-0 left-0 z-30 flex flex-col border-r bg-card
+              w-56 @mobileTranslate
+              transition-transform duration-300 ease-in-out
+              lg:relative lg:z-auto lg:translate-x-0 @desktopWidth
+              lg:transition-[width] lg:duration-300">
+
+    <div class="flex h-14 shrink-0 items-center border-b px-2">
+        <img src="/images/logo.svg"
+             alt="Logo"
+             class="h-8 w-auto max-w-full object-contain transition-all duration-300
+                    @(Sidebar.IsOpen ? "opacity-100" : "opacity-0 pointer-events-none hidden lg:block lg:opacity-0")" />
+
+        <img src="/images/logo_small.svg"
+             alt="Logo"
+             class="mx-auto h-6 w-6 object-contain transition-all duration-300
+                    @(Sidebar.IsOpen ? "opacity-0 hidden" : "lg:opacity-100 lg:block hidden")" />
+
+        <button @onclick="Sidebar.CloseMobile"
+                class="ml-auto rounded p-1 text-medium-emphasis hover:bg-muted hover:text-high-emphasis lg:hidden"
+                aria-label="Close sidebar"
+                type="button">
+            @((MarkupString)SvgIcons.Close)
         </button>
 
-        <button @onclick="Sidebar.CloseMobile" class="rounded p-1 text-medium-emphasis hover:bg-muted lg:hidden">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+        <button @onclick="Sidebar.Toggle"
+                class="ml-auto hidden rounded p-1 text-medium-emphasis hover:bg-muted hover:text-high-emphasis lg:flex"
+                aria-label="@(Sidebar.IsOpen ? "Collapse sidebar" : "Expand sidebar")"
+                type="button">
+            @if (Sidebar.IsOpen)
+            {
+                @((MarkupString)SvgIcons.CollapseLeft)
+            }
+            else
+            {
+                @((MarkupString)SvgIcons.ExpandRight)
+            }
         </button>
     </div>
 
-    <nav class="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-        @if (Sidebar.IsOpen)
+    <nav class="scrollbar-hide flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 px-2 py-3"
+         aria-label="Main navigation">
+        @foreach (var item in integrated)
         {
-            <p class="px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-low-emphasis">Cloud Integrated</p>
+            <SidebarNavItem Item="item"
+                            ShowText="@(Sidebar.IsOpen || Sidebar.IsMobileOpen)"
+                            OnClick="HandleNavClick" />
         }
-        else
+
+        @if (other.Count > 0)
         {
             <div class="my-2 border-t border-border"></div>
+
+            @if (Sidebar.IsOpen || Sidebar.IsMobileOpen)
+            {
+                <p class="mb-1 ml-2 text-[10px] font-medium uppercase tracking-wider text-medium-emphasis">
+                    Other
+                </p>
+            }
+
+            @foreach (var item in other)
+            {
+                <SidebarNavItem Item="item"
+                                ShowText="@(Sidebar.IsOpen || Sidebar.IsMobileOpen)"
+                                OnClick="HandleNavClick" />
+            }
         }
-
-        <SidebarMenuItem Label="IAM" Href="/identity-management" CurrentPath="@_currentPath" IsOpen="@Sidebar.IsOpen" IconSvg="@Icons.Users" />
-        <SidebarMenuItem Label="Inventory" Href="/inventory" CurrentPath="@_currentPath" IsOpen="@Sidebar.IsOpen" IconSvg="@Icons.Store" />
-
-        <div class="my-2 border-t border-border"></div>
-
-        @if (Sidebar.IsOpen)
-        {
-            <p class="px-2 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-wider text-low-emphasis">Other</p>
-        }
-
-        <SidebarMenuItem Label="Profile" Href="/profile" CurrentPath="@_currentPath" IsOpen="@Sidebar.IsOpen" IconSvg="@Icons.User" />
     </nav>
 </aside>
 
 @code {
-    private string _currentPath = "";
+    protected override void OnInitialized() => Sidebar.OnChange += StateHasChanged;
 
-    protected override void OnInitialized()
+    private void HandleNavClick()
     {
-        _currentPath = Nav.Uri;
-        Nav.LocationChanged += OnLocationChanged;
-        Sidebar.OnChange += StateHasChanged;
+        if (Sidebar.IsMobileOpen)
+        {
+            Sidebar.CloseMobile();
+        }
     }
 
-    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-    {
-        _currentPath = e.Location;
-        Sidebar.CloseMobile();
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        Nav.LocationChanged -= OnLocationChanged;
-        Sidebar.OnChange -= StateHasChanged;
-    }
+    public void Dispose() => Sidebar.OnChange -= StateHasChanged;
 }

@@ -11,7 +11,11 @@ public class AppAuthStateProvider(ILocalStorageService localStorage) : Authentic
     {
         try
         {
-            var token = NormalizeToken(await localStorage.GetItemAsStringAsync("accessToken"));
+            var token = NormalizeToken(await localStorage.GetItemAsStringAsync("access_token"));
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                token = NormalizeToken(await localStorage.GetItemAsStringAsync("accessToken"));
+            }
             if (string.IsNullOrWhiteSpace(token))
             {
                 return Anonymous();

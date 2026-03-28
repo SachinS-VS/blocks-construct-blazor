@@ -206,3 +206,33 @@ h1:focus {
         opacity: 1;
     }
 }
+
+@keyframes slide-in-left {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.bg-surface {
+    background-color: hsl(var(--surface, 220, 33%, 96%));
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+aside {
+    will-change: width, transform;
+}
+
+html.dark {
+    transition: background-color 200ms ease;
+}

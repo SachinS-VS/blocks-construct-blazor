@@ -32,5 +32,6 @@ EXPOSE 8080
 # Runtime configuration (pass these with -e or in compose/k8s)
 # MICROSERVICE_API_BASE_URL
 # X_BLOCKS_KEY
+# PROJECT_SLUG
 
 ENTRYPOINT ["dotnet", "Server.dll"]

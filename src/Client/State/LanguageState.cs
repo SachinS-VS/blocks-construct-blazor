@@ -136,6 +136,10 @@ public sealed class LanguageState(
         if (resetTranslations)
         {
             _translations.Clear();
+
+            // Translation dictionary is rebuilt from scratch, so invalidate per-language
+            // module cache to avoid false cache hits on subsequent route navigation.
+            _moduleCache.Remove(language);
         }
 
         foreach (var moduleName in GetModulesForRoute(path))

@@ -14,6 +14,7 @@ RUN apt-get update \
 # Restore npm dependencies first for better layer caching
 COPY package.json package-lock.json ./
 RUN npm ci
+RUN npm install --no-save @tailwindcss/oxide-linux-x64-gnu@4.2.2
 
 # Copy project files and restore/publish
 COPY . .

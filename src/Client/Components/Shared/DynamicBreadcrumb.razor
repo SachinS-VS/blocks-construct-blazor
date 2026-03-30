@@ -1,0 +1,72 @@
+@inject NavigationManager Nav
+@implements IDisposable
+
+<nav aria-label="Breadcrumb" class="hidden sm:block">
+    <ol class="flex items-center gap-1.5 text-sm text-medium-emphasis">
+        @foreach (var (display, raw, index) in _segments)
+        {
+            <li class="flex items-center gap-1.5">
+                @if (index < _segments.Count - 1)
+                {
+                    <button @onclick='() => NavigateTo("/" + string.Join("/", _segments.Take(index + 1).Select(s => s.Raw)))'
+                       class="capitalize transition-colors hover:text-primary"
+                       type="button">
+                        @display
+                    </button>
+                    <span class="text-low-emphasis" aria-hidden="true">/</span>
+                }
+                else
+                {
+                    <span class="font-semibold text-high-emphasis capitalize">@display</span>
+                }
+            </li>
+        }
+    </ol>
+</nav>
+
+@code {
+    private List<(string Display, string Raw, int Index)> _segments = [];
+    private string _currentPath = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        ParsePath();
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        var nextPath = new Uri(e.Location).AbsolutePath;
+        if (string.Equals(_currentPath, nextPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        ParsePath(nextPath);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ParsePath(string? absolutePath = null)
+    {
+        _currentPath = absolutePath ?? new Uri(Nav.Uri).AbsolutePath;
+        var path = _currentPath.Trim('/');
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 0)
+        {
+            parts = ["dashboard"];
+        }
+
+        _segments = parts
+            .Select((raw, i) => (
+                Display: raw.Replace("-", " "),
+                Raw: raw,
+                Index: i
+            ))
+            .ToList();
+    }
+
+    private void NavigateTo(string path) => Nav.NavigateTo(path);
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

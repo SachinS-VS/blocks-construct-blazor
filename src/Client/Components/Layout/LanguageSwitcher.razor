@@ -1,0 +1,131 @@
+@inject LanguageState Lang
+@implements IDisposable
+
+<div class="relative">
+    <button @onclick="Toggle"
+            class="flex h-[34px] items-center gap-1 rounded px-2 text-sm font-semibold text-medium-emphasis transition-colors hover:bg-muted"
+            aria-expanded="@_isOpen"
+            aria-haspopup="listbox"
+            type="button">
+        @if (Lang.IsLoading)
+        {
+            <span class="inline-block h-4 w-16 animate-pulse rounded bg-muted"></span>
+        }
+        else
+        {
+            <span>@CurrentLanguageName</span>
+        }
+
+        <svg class="h-4 w-4 transition-transform duration-200 @(_isOpen ? "rotate-180" : string.Empty)"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9"/>
+        </svg>
+    </button>
+
+    @if (_isOpen)
+    {
+        <div class="fixed inset-0 z-40" @onclick="Close" aria-hidden="true"></div>
+
+        <div class="absolute top-full right-0 z-50 mt-2 w-48 rounded-lg border bg-card shadow-lg"
+             role="listbox"
+             @onclick:stopPropagation="true">
+            @if (Lang.IsLoading)
+            {
+                <div class="px-4 py-3 text-sm text-medium-emphasis">
+                    <div class="flex items-center gap-2">
+                        <div class="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                        <span>@Tr("LOADING_LANGUAGES", "Loading languages...")</span>
+                    </div>
+                </div>
+            }
+            else if (!Lang.AvailableLanguages.Any())
+            {
+                <div class="px-4 py-3 text-sm text-medium-emphasis">@Tr("NO_LANGUAGES_AVAILABLE", "No languages available.")</div>
+            }
+            else
+            {
+                <div class="py-1">
+                    @foreach (var (lang, idx) in Lang.AvailableLanguages.Select((l, i) => (l, i)))
+                    {
+                        var isActive = string.Equals(lang.LanguageCode, Lang.CurrentLanguage, StringComparison.OrdinalIgnoreCase);
+
+                        <button @onclick='() => SelectLanguage(lang.LanguageCode)'
+                                class="flex w-full items-center justify-between px-4 py-2 text-sm transition-colors @(isActive ? "bg-primary/5 font-bold text-primary" : "text-high-emphasis hover:bg-muted")"
+                                role="option"
+                                aria-selected="@isActive"
+                                type="button">
+                            <span>@lang.LanguageName</span>
+
+                            @if (lang.IsDefault)
+                            {
+                                <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-low-emphasis">@Tr("DEFAULT", "Default")</span>
+                            }
+
+                            @if (isActive)
+                            {
+                                <svg class="h-4 w-4 text-primary" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            }
+                        </button>
+
+                        @if (idx < Lang.AvailableLanguages.Count - 1)
+                        {
+                            <div class="mx-2 border-t"></div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+
+    private string CurrentLanguageName =>
+        Lang.AvailableLanguages.FirstOrDefault(l =>
+            string.Equals(l.LanguageCode, Lang.CurrentLanguage, StringComparison.OrdinalIgnoreCase))?.LanguageName
+        ?? Lang.CurrentLanguage;
+
+    protected override void OnInitialized()
+    {
+        Lang.OnChange += HandleLanguageChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await Lang.InitializeAsync();
+    }
+
+    private void Toggle() => _isOpen = !_isOpen;
+
+    private void Close() => _isOpen = false;
+
+    private async Task SelectLanguage(string code)
+    {
+        Close();
+        await Lang.SetLanguageAsync(code, true);
+    }
+
+    private string Tr(string key, string fallback)
+    {
+        var value = Lang[key];
+        return string.Equals(value, key, StringComparison.OrdinalIgnoreCase) ? fallback : value;
+    }
+
+    public void Dispose()
+    {
+        Lang.OnChange -= HandleLanguageChanged;
+    }
+
+    private void HandleLanguageChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+}

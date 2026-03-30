@@ -1,0 +1,86 @@
+@inject SidebarState Sidebar
+@implements IDisposable
+
+@{
+    var desktopWidth = Sidebar.IsOpen ? "lg:w-56" : "lg:w-14";
+    var mobileTranslate = Sidebar.IsMobileOpen ? "translate-x-0" : "-translate-x-full";
+
+    var integrated = MenuDefinition.Items.Where(i => i.IsIntegrated).ToList();
+    var other = MenuDefinition.Items.Where(i => !i.IsIntegrated).ToList();
+}
+
+@if (Sidebar.IsMobileOpen)
+{
+    <div class="fixed inset-0 z-20 bg-black/50 lg:hidden"
+         @onclick="Sidebar.CloseMobile"
+         aria-hidden="true"></div>
+}
+
+<aside class="fixed inset-y-0 left-0 z-30 flex flex-col border-r bg-card
+              w-56 @mobileTranslate
+              transition-transform duration-300 ease-in-out
+              lg:relative lg:z-auto lg:translate-x-0 @desktopWidth
+              lg:transition-[width] lg:duration-300">
+
+    <div class="flex h-14 shrink-0 items-center border-b px-2">
+           <img src="/logo.png"
+             alt="Logo"
+             class="h-8 w-auto max-w-full object-contain transition-all duration-300
+                    @(Sidebar.IsOpen ? "opacity-100" : "opacity-0 pointer-events-none hidden lg:block lg:opacity-0")" />
+
+           <img src="/logo.png"
+             alt="Logo"
+               class="mx-auto h-8 w-8 rounded object-contain transition-all duration-300
+                    @(Sidebar.IsOpen ? "opacity-0 hidden" : "lg:opacity-100 lg:block hidden")" />
+
+        <button @onclick="Sidebar.CloseMobile"
+                class="ml-auto rounded p-1 text-medium-emphasis hover:bg-muted hover:text-high-emphasis lg:hidden"
+                aria-label="Close sidebar"
+                type="button">
+            @((MarkupString)SvgIcons.Close)
+        </button>
+    </div>
+
+    <nav class="scrollbar-hide flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 px-2 py-3"
+         aria-label="Main navigation">
+        @foreach (var item in integrated)
+        {
+            <SidebarNavItem Item="item"
+                            ShowText="@(Sidebar.IsOpen || Sidebar.IsMobileOpen)"
+                            OnClick="HandleNavClick" />
+        }
+
+        @if (other.Count > 0)
+        {
+            <div class="my-2 border-t border-border"></div>
+
+            @if (Sidebar.IsOpen || Sidebar.IsMobileOpen)
+            {
+                <p class="mb-1 ml-2 text-[10px] font-medium uppercase tracking-wider text-medium-emphasis">
+                    Other
+                </p>
+            }
+
+            @foreach (var item in other)
+            {
+                <SidebarNavItem Item="item"
+                                ShowText="@(Sidebar.IsOpen || Sidebar.IsMobileOpen)"
+                                OnClick="HandleNavClick" />
+            }
+        }
+    </nav>
+</aside>
+
+@code {
+    protected override void OnInitialized() => Sidebar.OnChange += StateHasChanged;
+
+    private void HandleNavClick()
+    {
+        if (Sidebar.IsMobileOpen)
+        {
+            Sidebar.CloseMobile();
+        }
+    }
+
+    public void Dispose() => Sidebar.OnChange -= StateHasChanged;
+}

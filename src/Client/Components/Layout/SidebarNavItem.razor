@@ -1,0 +1,119 @@
+@inject NavigationManager Nav
+@implements IDisposable
+
+@{
+    var isActive = _currentPath.StartsWith(Item.Path, StringComparison.OrdinalIgnoreCase);
+    var isParentActive = Item.HasChildren && Item.Children.Any(c => _currentPath.StartsWith(c.Path, StringComparison.OrdinalIgnoreCase));
+    var itemActive = isActive || isParentActive;
+
+    var linkBase = "flex items-center w-full gap-0 rounded-md px-2 py-2 text-base font-normal transition-colors";
+    var activeClass = itemActive
+        ? "bg-surface text-primary"
+        : "text-high-emphasis hover:bg-muted hover:text-high-emphasis";
+}
+
+@if (Item.HasChildren)
+{
+    <div class="w-full">
+        <button @onclick="ToggleChildren"
+                class="@linkBase @activeClass w-full text-left"
+                type="button">
+            <span class="flex h-6 w-6 shrink-0 items-center justify-center">
+                @((MarkupString)SvgIcons.Get(Item.Icon))
+            </span>
+
+            @if (ShowText)
+            {
+                <span class="ml-3 flex-1 truncate">@Item.Label</span>
+                <span class="ml-auto transition-transform duration-200 @(_childrenOpen ? "rotate-90" : "")">
+                    @((MarkupString)SvgIcons.ChevronRight)
+                </span>
+            }
+        </button>
+
+        @if (_childrenOpen && ShowText)
+        {
+            <div class="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-3">
+                @foreach (var child in Item.Children)
+                {
+                    var childActive = _currentPath.StartsWith(child.Path, StringComparison.OrdinalIgnoreCase);
+                    <button @onclick='() => NavigateTo(child.Path)'
+                            type="button"
+                       class="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors @(childActive ? "text-primary font-medium" : "text-medium-emphasis hover:text-high-emphasis hover:bg-muted")">
+                        @if (!string.IsNullOrEmpty(child.Icon))
+                        {
+                            <span class="flex h-4 w-4 items-center justify-center">
+                                @((MarkupString)SvgIcons.Get(child.Icon))
+                            </span>
+                        }
+                        @child.Label
+                    </button>
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <button @onclick='() => NavigateTo(Item.Path)'
+       type="button"
+       class="@linkBase @activeClass">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center"
+              title="@(!ShowText ? Item.Label : string.Empty)">
+            @((MarkupString)SvgIcons.Get(Item.Icon))
+        </span>
+
+        @if (ShowText)
+        {
+            <span class="ml-3 truncate">@Item.Label</span>
+        }
+    </button>
+}
+
+@code {
+    [Parameter] public MenuItemModel Item { get; set; } = default!;
+    [Parameter] public bool ShowText { get; set; } = true;
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private string _currentPath = string.Empty;
+    private bool _childrenOpen;
+
+    protected override void OnInitialized()
+    {
+        _currentPath = new Uri(Nav.Uri).AbsolutePath;
+        _childrenOpen = Item.HasChildren && Item.Children.Any(c => _currentPath.StartsWith(c.Path, StringComparison.OrdinalIgnoreCase));
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        var nextPath = new Uri(e.Location).AbsolutePath;
+        if (string.Equals(_currentPath, nextPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _currentPath = nextPath;
+
+        // Keep parent expanded when a child route is active after navigation.
+        if (Item.HasChildren && Item.Children.Any(c => _currentPath.StartsWith(c.Path, StringComparison.OrdinalIgnoreCase)))
+        {
+            _childrenOpen = true;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task NavigateTo(string path)
+    {
+        Nav.NavigateTo(path);
+        if (OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+
+    private void ToggleChildren() => _childrenOpen = !_childrenOpen;
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

@@ -1,0 +1,31 @@
+<SidebarNavItem Item="_item" ShowText="IsOpen" />
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Href { get; set; } = string.Empty;
+    [Parameter] public string CurrentPath { get; set; } = string.Empty;
+    [Parameter] public bool IsOpen { get; set; } = true;
+    [Parameter] public string IconSvg { get; set; } = string.Empty;
+
+    private MenuItemModel _item = new();
+
+    protected override void OnParametersSet()
+    {
+        _item = new MenuItemModel
+        {
+            Id = Label.ToLowerInvariant().Replace(" ", "-"),
+            Label = Label,
+            Path = Href,
+            Icon = ResolveIconKey(IconSvg),
+            IsIntegrated = false
+        };
+    }
+
+    private static string ResolveIconKey(string iconSvg)
+    {
+        if (iconSvg == Icons.Users || iconSvg == SvgIcons.Users) return "users";
+        if (iconSvg == Icons.Store || iconSvg == SvgIcons.Store) return "store";
+        if (iconSvg == Icons.User || iconSvg == SvgIcons.User) return "user";
+        return "dashboard";
+    }
+}

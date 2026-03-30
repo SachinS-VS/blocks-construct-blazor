@@ -1,310 +1,220 @@
-# blocks-construct-blazor
+# Blocks Construct — Blazor WASM
 
-A production-ready SELISE Blocks Blazor WASM application with **Interactive Auto** per-page rendering. Built with .NET 10, Tailwind CSS v4, REST APIs, and OIDC authentication.
+A production-ready enterprise application template built on **SELISE Blocks**, featuring .NET 10, Blazor WASM with Interactive Auto per-page rendering, Tailwind CSS v4, and OIDC authentication. Designed for scalability, maintainability, and strict adherence to software engineering best practices.
 
 ## Overview
 
-This is a full-stack .NET 10 application showcasing:
-- **Blazor WASM** frontend (Interactive Auto rendering mode)
-- **ASP.NET Core** backend hosting UI + REST APIs
-- **Tailwind CSS v4** for styling (utility-first, no scoped CSS)
-- **OIDC authentication** via SELISE Blocks identity
-- **Feature-based architecture** with clean separation of concerns
-- **Multi-project structure**: Client, Server, Services (shared), Worker, Tests
+This is a comprehensive full-stack .NET 10 application showcasing enterprise patterns:
 
-Perfect for building enterprise applications with modern .NET stack and SELISE Blocks platform integration.
+- **Blazor WASM Frontend** — Interactive Auto rendering mode with per-page granularity
+- **ASP.NET Core Backend** — Single unified host for UI and REST APIs
+- **Shared Services Layer** — Feature-based architecture with dependency injection and separation of concerns
+- **Tailwind CSS v4** — Utility-first styling as the only CSS approach (no CSS frameworks or scoped styles)
+- **OIDC Authentication** — Integrated with SELISE Blocks identity platform
+- **Comprehensive Testing** — Unit tests (xUnit) and component integration tests (bUnit)
+- **Worker Service** — Background job processing for async operations
+- **Docker & Kubernetes Ready** — Multi-environment containerized deployment support
+
+This template exemplifies production-quality application architecture with federated feature teams, strict architectural conventions, and proven scalability patterns.
+
+---
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Blazor WASM (.NET 10), Tailwind CSS v4 |
-| **Backend** | ASP.NET Core 10, REST API (ApiController), Swagger/OpenAPI |
-| **Authentication** | OIDC (SELISE Blocks identity) |
-| **Data** | GraphQL queries/mutations, S3 file uploads |
-| **Testing** | xUnit + bUnit |
-| **Deployment** | Docker, Kubernetes |
-| **CSS** | Tailwind CSS v4 (only styling method) |
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| **Frontend** | Blazor WASM (.NET 10) | Interactive Auto rendering with per-page granularity and prerendering |
+| **UI Framework** | Tailwind CSS v4 | Utility-first, compiled via MSBuild, no other CSS libraries permitted |
+| **Backend** | ASP.NET Core 10 | Unified host for UI and REST APIs with automatic HTTPS |
+| **API** | REST (ApiController) + Swagger/OpenAPI | Auto-generated, kebab-case routes, OpenAPI spec in dev mode |
+| **Authentication** | OIDC | SELISE Blocks identity integration with token-based auth |
+| **Data** | GraphQL + S3 | Platform-native APIs for queries, mutations, and file operations |
+| **Testing** | xUnit + bUnit | Unit tests and Blazor component integration testing |
+| **Dependency Injection** | .NET Core DI Container | Feature-based service registration in `ServiceExtensions.cs` |
+| **Deployment** | Docker, Kubernetes, Cloud | Multi-environment configuration with secrets management |
 
-## Prerequisites
+---
 
-- **.NET 10 SDK** — [Download](https://dotnet.microsoft.com/download/dotnet/10.0)
-- **Node.js 18+** — Required for Tailwind CSS CLI (optional, can use MSBuild integration)
-- **Docker** (optional) — For containerized deployment
-- **Git** — For version control
+## Project Structure Overview
+
+Feature-based architecture organized by business capability:
+
+```
+src/
+├── Client/              # Blazor WASM Frontend
+├── Server/              # ASP.NET Core Host
+├── Services/            # Shared business logic (feature-based)
+├── Test/                # Test suite (xUnit + bUnit)
+└── Worker/              # Background service
+```
+
+**Complete structure with detailed organization** is documented in [Architecture & Conventions](#architecture--conventions) section below.
+
+---
 
 ## Quick Start
 
-### 1. Clone and Setup
+### 1. Prerequisites
+
+- .NET 10 SDK — [Download](https://dotnet.microsoft.com/download/dotnet/10.0)
+- Git
+- SELISE Blocks credentials (API URL and key)
+
+### 2. Clone & Setup
 
 ```bash
 git clone https://github.com/SELISEdigitalplatforms/blocks-construct-blazor.git
 cd blocks-construct-blazor
-```
-
-### 2. Prepare Runtime Settings
-
-Get these values from **SELISE Blocks Cloud Portal** → Project settings:
-
-- `MICROSERVICE_API_BASE_URL` (required)
-- `X_BLOCKS_KEY` (required)
-
-### 3. Install Dependencies
-
-```bash
 dotnet restore
+npm install
 ```
 
-### 4. Run the Project
+### 3. Configure & Run
 
+**Option A: Using .env file (Recommended)**
+
+Copy the example file to `src/Server/`:
 ```bash
-dotnet watch --project src/Server -- \
-  --MICROSERVICE_API_BASE_URL=<your_blocks_api_url> \
-  --X_BLOCKS_KEY=<your_blocks_api_key>
+cp .env.example src/Server/.env
 ```
 
-The application starts at `https://localhost:7075`
-
-## Folder Structure
-
+Edit `src/Server/.env` with your credentials:
 ```
-src/
-├── Client/                          # Blazor WASM — pages and components
-│   ├── Components/
-│   │   ├── Shared/                  # Reusable UI components
-│   │   └── Forms/                   # Form-specific components
-│   └── Pages/
-│       ├── Auth/LoginPage.razor
-│       ├── Dashboard/DashboardPage.razor
-│       └── Home/HomePage.razor
-├── Server/                          # Single host for UI and API
-│   ├── Components/Layout/           # App.razor, MainLayout, Routes, etc.
-│   ├── Controllers/                 # [ApiController] REST endpoints
-│   └── Extensions/                  # DI registration (AddApplicationServices)
-├── Services/                        # Shared business logic — feature-based
-│   └── SalesOrders/
-│       ├── ISalesOrderService.cs
-│       ├── SalesOrderService.cs
-│       └── SalesOrder.cs
-├── Test/                            # xUnit tests
-│   └── Services/                    # Unit tests per feature
-└── Worker/                          # Background service
-    └── Jobs/                        # One class per background job
+MICROSERVICE_API_BASE_URL=https://api.blocks.com
+X_BLOCKS_KEY=your-secret-key
+PROJECT_SLUG=my-project
 ```
 
-## Configuration
-
-The application reads configuration from **command-line args, environment variables, and appsettings**. This approach supports local development, Docker, Kubernetes, and CI/CD.
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MICROSERVICE_API_BASE_URL` | Microservice API base URL (with protocol) | none |
-| `X_BLOCKS_KEY` | Blocks API authentication key | none |
-
-**Resolution order:**
-1. Command-line args (highest priority), e.g. `--MICROSERVICE_API_BASE_URL=...`, `--X_BLOCKS_KEY=...`
-2. Environment variables
-3. `appsettings.{Environment}.json` fallback (e.g., `appsettings.Development.json`)
-
-### Local Development (Command Args)
-
-Run with explicit args:
-
+Load and run:
 ```bash
-dotnet run --project src/Server/Server.csproj -- \
-  --MICROSERVICE_API_BASE_URL=<your_blocks_api_url> \
-  --X_BLOCKS_KEY=<your_blocks_api_key>
-```
+# Linux/macOS
+cd src/Server && export $(cat .env | xargs) && cd ../..
+dotnet watch --project src/Server
 
-You can also use split-arg format:
-
-```bash
-dotnet run --project src/Server/Server.csproj -- \
-  --MICROSERVICE_API_BASE_URL <your_blocks_api_url> \
-  --X_BLOCKS_KEY <your_blocks_api_key>
-```
-
-### Docker
-
-Set environment variables in your `docker-compose.yml`:
-
-```yaml
-services:
-  blocks-server:
-    image: blocks-construct:latest
-    environment:
-      MICROSERVICE_API_BASE_URL: ${MICROSERVICE_API_BASE_URL}  # Your microservice API URL
-      X_BLOCKS_KEY: ${BLOCKS_KEY}    # Your SELISE Blocks API key
-    ports:
-      - "5001:8080"
-```
-
-Or run directly:
-
-```bash
-docker run \
-  -e MICROSERVICE_API_BASE_URL=<your_blocks_api_url> \
-  -e X_BLOCKS_KEY=<your_blocks_api_key> \
-  -p 5001:8080 \
-  blocks-construct
-```
-
-### Kubernetes
-
-Use ConfigMap for non-sensitive config and Secrets for API keys.
-
-**configmap.yaml:**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: blocks-config
-data:
-  MICROSERVICE_API_BASE_URL: "<your_blocks_api_url>"  # Your microservice API URL
-```
-
-**secret.yaml:**
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: blocks-secret
-type: Opaque
-stringData:
-  X_BLOCKS_KEY: "<your_blocks_api_key>"  # Your SELISE Blocks API key
-```
-
-**deployment.yaml:**
-```yaml
-spec:
-  containers:
-  - name: blocks-server
-    image: blocks-construct:latest
-    env:
-    - name: MICROSERVICE_API_BASE_URL
-      valueFrom:
-        configMapKeyRef:
-          name: blocks-config
-          key: MICROSERVICE_API_BASE_URL
-    - name: X_BLOCKS_KEY
-      valueFrom:
-        secretKeyRef:
-          name: blocks-secret
-          key: X_BLOCKS_KEY
-```
-
-### GitHub Actions
-
-Set secrets in GitHub and use in workflows:
-
-```yaml
-env:
-  MICROSERVICE_API_BASE_URL: ${{ secrets.MICROSERVICE_API_BASE_URL }}
-  X_BLOCKS_KEY: ${{ secrets.BLOCKS_KEY }}
-```
-
-## Run the Project
-
-```bash
+# Windows (PowerShell)
+Get-Content src/Server/.env | ForEach-Object {
+    $key, $value = $_ -split '=',2
+    [Environment]::SetEnvironmentVariable($key, $value)
+}
 dotnet watch --project src/Server
 ```
 
-The app runs on `https://localhost:7075` (or the URL shown in terminal).
+**Option B: Command-line arguments**
 
-### Tailwind CSS Watch Mode (Optional)
+```bash
+dotnet watch --project src/Server -- \
+  --MICROSERVICE_API_BASE_URL=https://api.blocks.com \
+  --X_BLOCKS_KEY=your-secret-key \
+  --PROJECT_SLUG=my-project
+```
 
-Watch for CSS changes and rebuild automatically:
+**Option C: Environment variables**
 
+```bash
+export MICROSERVICE_API_BASE_URL=https://api.blocks.com
+export X_BLOCKS_KEY=your-secret-key
+export PROJECT_SLUG=my-project
+
+dotnet watch --project src/Server
+```
+
+**Optional: Watch Tailwind CSS for changes**
+
+In a separate terminal:
 ```bash
 npm run css:watch
 ```
 
-## Architecture
+Access the app at **https://localhost:7075**
 
-### Rendering Strategy: Interactive Auto
+---
 
-This app uses **Interactive Auto** with **per-page** rendering:
+## Architecture & Conventions
 
-- **Every page component** in `src/Client/Pages/` declares `@rendermode InteractiveAuto`
-- **Child components** inherit the render mode from their parent — no need to repeat it
-- **Layout components** (App.razor, MainLayout) stay SSR-only
-- **Prerendering** is enabled by default — components render on server first, then become interactive on client
+### Rendering: Interactive Auto (Per-Page)
 
-Example page:
+Every page component **must declare** `@rendermode InteractiveAuto`:
+
 ```razor
-@page "/dashboard"
+@page "/sales"
 @rendermode InteractiveAuto
 
-<h1>Dashboard</h1>
+<h1>Sales Orders</h1>
 ```
 
-### Feature-Based Services
+**Rules:**
+- Line 2: `@rendermode InteractiveAuto` (after `@page` directive)
+- Child components inherit render mode (don't repeat)
+- Layout components stay SSR-only (no render mode directive)
+- Prerendering enabled by default for SEO + performance
 
-Services are organized by domain, not by type:
+### Naming Conventions
+
+| Item | Pattern | Example |
+|------|---------|---------|
+| Pages | `{Feature}Page.razor` | `SalesPage.razor`, `InventoryListPage.razor` |
+| Components | `{Name}.razor` | `LoadingSpinner.razor`, `PageHeader.razor` |
+| Services | `I{Feature}Service.cs`, `{Feature}Service.cs` | `ISalesOrderService.cs`, `SalesOrderService.cs` |
+| Models | `{Entity}.cs` | `SalesOrder.cs`, `InventoryItem.cs` |
+| Controllers | `{Feature}Controller.cs` | `SalesOrdersController.cs` |
+| API Routes | `/api/kebab-case` | `/api/sales-orders`, `/api/inventory-items` |
+| Namespaces | `Services.{Feature}` | `Services.SalesOrders` |
+
+### Feature-Based Service Architecture
+
+Services organized by **business domain**, not by technical type:
 
 ```
-Services/
-├── SalesOrders/
-│   ├── ISalesOrderService.cs
-│   ├── SalesOrderService.cs
-│   └── SalesOrder.cs
+Services/SalesOrders/          # Feature folder
+├── ISalesOrderService.cs      # Interface
+├── SalesOrderService.cs       # Implementation
+└── SalesOrder.cs              # Domain model
 ```
 
-### Dependency Injection
-
-All services registered in [src/Server/Extensions/ServiceExtensions.cs](src/Server/Extensions/ServiceExtensions.cs):
+**Registration**: All services registered in `Server/Extensions/ServiceExtensions.cs`:
 
 ```csharp
-public static IServiceCollection AddApplicationServices(this IServiceCollection services, string webRootPath)
+public static IServiceCollection AddApplicationServices(
+    this IServiceCollection services, string webRootPath)
 {
-    services.AddScoped<ISalesOrderService>(_ => new SalesOrderService(webRootPath));
+    services.AddScoped<ISalesOrderService>(
+        _ => new SalesOrderService(webRootPath));
     return services;
 }
 ```
 
-Inject into components:
-```razor
-@inject ISalesOrderService SalesOrderService
+### REST API Controllers
+
+- **Location**: `src/Server/Controllers/`
+- **Naming**: `{Feature}Controller.cs`
+- **Routes**: `[Route("api/{feature}")]` (kebab-case)
+- **DI**: Constructor injection
+- **Returns**: `ActionResult<T>`
+
+**Example:**
+```csharp
+[ApiController]
+[Route("api/sales-orders")]
+public class SalesOrdersController(ISalesOrderService service) : ControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<SalesOrder>>> GetAll() =>
+        Ok(await service.GetAllAsync());
+}
 ```
 
-## Authentication & Security
+### Styling: Tailwind CSS v4 Only
 
-### OIDC Login
+**Rules (Strictly Enforced):**
 
-App uses OIDC via SELISE Blocks for user authentication.
+✅ **DO:** Use Tailwind utility classes: `<div class="flex items-center gap-4 p-6 bg-white rounded-lg">`
 
-**Key Components:**
-- `AppAuthStateProvider` — Manages auth state
-- `AuthTokenHandler` — Injects token into API requests
-- `RequireClientAuth` — Guards protected pages
+❌ **DON'T:**
+- Create `.razor.css` files
+- Write inline `style="..."`
+- Use other CSS frameworks
 
-### Protected Pages
-
-```razor
-@page "/dashboard"
-@rendermode InteractiveAuto
-
-<RequireClientAuth>
-    <h1>Dashboard</h1>
-</RequireClientAuth>
-```
-
-## Styling with Tailwind CSS v4
-
-**Tailwind CSS is the only styling method.** No scoped CSS, no inline styles.
-
-### Rules
-
-✅ Use Tailwind utility classes: `<div class="flex items-center gap-4 p-6 bg-white rounded-lg shadow">`
-❌ Don't create `.razor.css` files
-❌ Don't use inline `style="..."`  
-❌ Don't use other CSS frameworks
-
-### Tailwind Source
-
-Edit [src/Server/wwwroot/app.tailwind.css](src/Server/wwwroot/app.tailwind.css):
+**Source:** [src/Server/wwwroot/app.tailwind.css](src/Server/wwwroot/app.tailwind.css)
 
 ```css
 @import "tailwindcss";
@@ -321,75 +231,263 @@ Edit [src/Server/wwwroot/app.tailwind.css](src/Server/wwwroot/app.tailwind.css):
 }
 ```
 
-Build CSS:
-```bash
-dotnet build  # includes MSBuild Tailwind target
+**Build:** `dotnet build` (compiled to `app.css` via MSBuild)
+
+### Error Handling & Security
+
+**Don't expose exception details:**
+
+❌ **Bad:**
+```csharp
+catch (Exception ex)
+{
+    return new Response { Error = ex.Message };
+}
 ```
 
-## Available Interfaces
-
-| Page | URL | Protected |
-|------|-----|-----------|
-| Home | `/` | ❌ No |
-| Login | `/login` | ❌ No |
-| Dashboard | `/dashboard` | ✅ Yes |
-| Profile | `/profile` | ✅ Yes |
-| IAM | `/iam` | ✅ Yes |
-| Inventory | `/inventory` | ✅ Yes |
-
-## API Endpoints
-
-### Swagger UI
-
-`https://localhost:7075/swagger` (Development only)
-
-### Sales Orders
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/api/sales-orders` | List all sales orders |
-| `GET` | `/api/sales-orders/{id}` | Get a single sales order |
-| `GET` | `/api/sales-orders/by-status/{status}` | Filter by status |
-
-**Example:**
-```bash
-curl -H "Authorization: Bearer {token}" \
-  https://localhost:7075/api/sales-orders
+✅ **Good:**
+```csharp
+catch (Exception ex)
+{
+    Logger.LogError(ex, "Failed to retrieve orders");
+    return new Response { Error = "An error occurred. Please try again." };
+}
 ```
+
+**Security Checklist:**
+- No hardcoded secrets (use environment variables)
+- No exception details in API responses
+- Forms use `<EditForm>` with `DataAnnotationsValidator`
+- Input validated at system boundaries
+- Output HTML-encoded by default
+- Authentication middleware before `[Authorize]`
+
+---
+
+## Configuration
+
+Configuration is resolved in priority order:
+
+1. Command-line args: `--MICROSERVICE_API_BASE_URL=...`
+2. Environment variables: `MICROSERVICE_API_BASE_URL=...`
+3. appsettings.{Environment}.json
+4. appsettings.json
+
+### Required Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MICROSERVICE_API_BASE_URL` | SELISE Blocks microservice API endpoint | `https://api.blocks.com` |
+| `X_BLOCKS_KEY` | SELISE Blocks API authentication key | `sk_live_abc123def456` |
+| `PROJECT_SLUG` | Project slug in SELISE Blocks | `my-project` |
+
+### Configuration Methods
+
+#### Method 1: Command-Line Arguments (Recommended)
+
+```bash
+dotnet watch --project src/Server -- \
+  --MICROSERVICE_API_BASE_URL=https://api.blocks.com \
+  --X_BLOCKS_KEY=your-secret-key \
+  --PROJECT_SLUG=my-project
+```
+
+#### Method 2: Environment Variables
+
+**Linux/macOS:**
+```bash
+export MICROSERVICE_API_BASE_URL=https://api.blocks.com
+export X_BLOCKS_KEY=your-secret-key
+export PROJECT_SLUG=my-project
+
+dotnet watch --project src/Server
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:MICROSERVICE_API_BASE_URL = "https://api.blocks.com"
+$env:X_BLOCKS_KEY = "your-secret-key"
+$env:PROJECT_SLUG = "my-project"
+
+dotnet watch --project src/Server
+```
+
+**Using .env file:**
+Copy `.env.example` to `src/Server/.env` and populate:
+```bash
+cp .env.example src/Server/.env
+# Edit src/Server/.env with your values
+```
+
+**src/Server/.env contents:**
+```
+MICROSERVICE_API_BASE_URL=https://api.blocks.com
+X_BLOCKS_KEY=your-secret-key
+PROJECT_SLUG=my-project
+```
+
+Load in your shell:
+```bash
+cd src/Server && export $(cat .env | xargs) && cd ../..
+```
+
+#### Method 3: appsettings.Development.json
+
+Edit `src/Server/appsettings.Development.json`:
+
+```json
+{
+  "Config": {
+    "MicroserviceApiBaseUrl": "https://api.blocks.com",
+    "XBlocksKey": "your-secret-key",
+    "ProjectSlug": "my-project"
+  }
+}
+```
+
+⚠️ **Never commit secrets** — this method is for local development only.
+
+#### Method 4: User Secrets (Secure Dev)
+
+```bash
+# Initialize user secrets (one-time)
+dotnet user-secrets init --project src/Server
+
+# Set secrets
+dotnet user-secrets set Config:XBlocksKey "your-secret-key" --project src/Server
+dotnet user-secrets set Config:MicroserviceApiBaseUrl "https://api.blocks.com" --project src/Server
+dotnet user-secrets set Config:ProjectSlug "my-project" --project src/Server
+
+# View secrets
+dotnet user-secrets list --project src/Server
+```
+
+User secrets stored locally (never in repo): `~/.microsoft/usersecrets/<project-id>/secrets.json`
+
+### Deployment
+
+#### Docker
+
+```bash
+docker run \
+  -e MICROSERVICE_API_BASE_URL=https://api.blocks.com \
+  -e X_BLOCKS_KEY=your-secret-key \
+  -e PROJECT_SLUG=my-project \
+  -p 8080:8080 \
+  blocks-construct
+```
+
+#### Docker Compose
+
+```yaml
+version: '3.8'
+services:
+  app:
+    image: blocks-construct
+    environment:
+      MICROSERVICE_API_BASE_URL: ${MICROSERVICE_API_BASE_URL}
+      X_BLOCKS_KEY: ${X_BLOCKS_KEY}
+      PROJECT_SLUG: ${PROJECT_SLUG}
+    ports:
+      - "8080:8080"
+```
+
+#### Kubernetes
+
+**ConfigMap:**
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blocks-config
+data:
+  MICROSERVICE_API_BASE_URL: "https://api.blocks.com"
+  PROJECT_SLUG: "my-project"
+```
+
+**Secret:**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: blocks-secret
+type: Opaque
+stringData:
+  X_BLOCKS_KEY: "your-secret-key"
+```
+
+**Deployment:**
+```yaml
+spec:
+  containers:
+  - name: app
+    image: blocks-construct
+    env:
+    - name: MICROSERVICE_API_BASE_URL
+      valueFrom:
+        configMapKeyRef:
+          name: blocks-config
+          key: MICROSERVICE_API_BASE_URL
+    - name: X_BLOCKS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: blocks-secret
+          key: X_BLOCKS_KEY
+    - name: PROJECT_SLUG
+      valueFrom:
+        configMapKeyRef:
+          name: blocks-config
+          key: PROJECT_SLUG
+```
+
+---
+
+## API Documentation
+
+### Swagger
+
+- **Dev:** https://localhost:7075/swagger
+- **Production:** Disabled
+
+### Example: Sales Orders
+
+```
+GET    /api/sales-orders         # List all
+GET    /api/sales-orders/{id}    # Get one
+POST   /api/sales-orders         # Create
+```
+
+---
 
 ## Testing
-
-### Run Tests
 
 ```bash
 dotnet test
 ```
 
-**Unit tests:** `src/Test/Services/`
-**Component tests (bUnit):** `src/Test/Pages/`
+**Structure:**
+- `Test/Services/` — Unit tests (xUnit)
+- `Test/Pages/` — Component tests (bUnit)
+
+**Example xUnit test:**
+```csharp
+[Fact]
+public async Task GetById_WithValidId_ReturnsSalesOrder()
+{
+    var service = new SalesOrderService();
+    var result = await service.GetByIdAsync("ORD-001");
+    Assert.NotNull(result);
+}
+```
+
+---
 
 ## Building & Deployment
 
-### Build and Run (Local)
-
-```bash
-dotnet restore
-dotnet build src/Server/Server.csproj
-dotnet run --project src/Server/Server.csproj -- \
-  --MICROSERVICE_API_BASE_URL=<your_blocks_api_url> \
-  --X_BLOCKS_KEY=<your_blocks_api_key>
-```
-
-Hot reload:
+### Local Development
 
 ```bash
 dotnet watch --project src/Server
-```
-
-### Development Build
-
-```bash
-dotnet build
 ```
 
 ### Release Build
@@ -402,82 +500,122 @@ dotnet publish -c Release -o ./publish src/Server
 
 ```bash
 docker build -t blocks-construct .
-docker run -e MICROSERVICE_API_BASE_URL=<your_blocks_api_url> \
-           -e X_BLOCKS_KEY=<your_blocks_api_key> \
-           -p 8080:8080 blocks-construct
+docker run -e MICROSERVICE_API_BASE_URL=<url> -e X_BLOCKS_KEY=<key> -p 8080:8080 blocks-construct
 ```
 
-## Adding Features
+### Docker Compose
 
-### New Page
+```yaml
+version: '3.8'
+services:
+  app:
+    image: blocks-construct
+    environment:
+      MICROSERVICE_API_BASE_URL: ${API_URL}
+      X_BLOCKS_KEY: ${API_KEY}
+    ports:
+      - "8080:8080"
+```
 
-1. Create file: `src/Client/Pages/Feature/FeaturePage.razor`
-   ```razor
-   @page "/feature"
-   @rendermode InteractiveAuto
-   <h1>Feature</h1>
-   ```
-2. Add tests in `src/Test/Pages/`
+### Kubernetes
 
-### New Service
+Use ConfigMap for config and Secret for sensitive values:
 
-1. Create folder: `src/Services/Feature/`
-   - `IFeatureService.cs`
-   - `FeatureService.cs`
-   - `Feature.cs` (model)
+```yaml
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blocks-config
+data:
+  MICROSERVICE_API_BASE_URL: "https://api.blocks.com"
 
-2. Register in [src/Server/Extensions/ServiceExtensions.cs](src/Server/Extensions/ServiceExtensions.cs)
+---
+# Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: blocks-secret
+type: Opaque
+stringData:
+  X_BLOCKS_KEY: "your-key"
 
-3. Add tests in `src/Test/Services/`
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blocks-construct
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: blocks-construct
+  template:
+    metadata:
+      labels:
+        app: blocks-construct
+    spec:
+      containers:
+      - name: app
+        image: blocks-construct
+        env:
+        - name: MICROSERVICE_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: blocks-config
+              key: MICROSERVICE_API_BASE_URL
+        - name: X_BLOCKS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: blocks-secret
+              key: X_BLOCKS_KEY
+```
 
-### New API Endpoint
+---
 
-1. Create file: `src/Server/Controllers/FeatureController.cs`
-   ```csharp
-   [ApiController]
-   [Route("api/feature")]
-   public class FeatureController(IFeatureService service) : ControllerBase
-   {
-       [HttpGet]
-       public async Task<ActionResult<IEnumerable<Feature>>> GetAll() =>
-           Ok(await service.GetAllAsync());
-   }
-   ```
+## Creating a New Feature
 
-2. Endpoint auto-exposed in Swagger
+1. **Create service**: `Services/MyFeature/`
+   - `IMyFeatureService.cs`
+   - `MyFeatureService.cs`
+   - `MyFeature.cs` (model)
 
-## Troubleshooting
+2. **Register**: Add to `Server/Extensions/ServiceExtensions.cs`
 
-| Issue | Solution |
-|-------|----------|
-| `NETSDK1045` / dotnet watch fails | Install **.NET 10 SDK** and verify with `dotnet --list-sdks`; this repo is pinned via `global.json` |
-| Port 7075 in use | Change port in `launchSettings.json` |
-| Tailwind not compiling | Run `npm run css:build` |
-| Auth token expired | Clear LocalStorage and log in again |
-| `Missing or invalid API base URL` at startup | Pass `--MICROSERVICE_API_BASE_URL=...` or set `MICROSERVICE_API_BASE_URL` env var |
-| CORS errors | Check `MICROSERVICE_API_BASE_URL` and `X_BLOCKS_KEY` env vars |
+3. **API**: Create `Server/Controllers/MyFeatureController.cs`
+
+4. **UI**: Create `Client/Pages/MyFeature/MyFeaturePage.razor` with `@rendermode InteractiveAuto`
+
+5. **Tests**:
+   - `Test/Services/MyFeatureServiceTests.cs`
+   - `Test/Pages/MyFeature/MyFeaturePageTests.cs`
+
+---
 
 ## Best Practices
 
-✅ Use `@rendermode InteractiveAuto` on every page
-✅ Keep services feature-based
-✅ Use `@inject` for dependencies (not `new`)
-✅ Guard `IJSRuntime` in `OnAfterRenderAsync`
-✅ Store secrets in environment variables
-✅ Write tests
+- **One concern per class** — Follow Single Responsibility Principle
+- **Inject dependencies** — Never instantiate services with `new`
+- **Write tests** — Test-driven development
+- **Keep pages simple** — Move logic to services
+- **Use Tailwind** — No custom CSS
+- **Handle errors** — No exception details to users
+- **Log properly** — Full exceptions server-side only
 
-❌ Don't hardcode secrets
-❌ Don't create type-based folders
-❌ Don't use multiple CSS frameworks
-❌ Don't use scoped `.razor.css` files
+---
+
+## Resources
+
+- **[CLAUDE.md](CLAUDE.md)** — Claude AI assistant instructions
+- **[copilot-instructions.md](.github/copilot-instructions.md)** — GitHub Copilot guidelines
+- **[ASP.NET Core Docs](https://learn.microsoft.com/aspnet/core/)** — Official docs
+- **[Blazor Docs](https://learn.microsoft.com/aspnet/core/blazor/)** — Blazor reference
+- **[Tailwind CSS](https://tailwindcss.com/docs)** — Utility class reference
+- **[SELISE Blocks](https://blocks.selise.com/docs)** — Platform docs
+
+---
 
 ## License
 
-MIT License — See [LICENSE](LICENSE)
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/SELISEdigitalplatforms/blocks-construct-blazor/issues)
-- **Docs**: [SELISE Blocks](https://blocks.selise.io)
-
----
+[LICENSE](LICENSE)

@@ -60,7 +60,7 @@ public class SsoService(
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[SSO] GetLoginOptions failed: {ex.Message}");
+            Console.Error.WriteLine($"[SSO] GetLoginOptions failed: {ex}");
             return null;
         }
     }
@@ -93,8 +93,8 @@ public class SsoService(
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[SSO] GetSocialLoginEndpoint failed: {ex.Message}");
-            return new GetSocialLoginEndpointResponse { Error = ex.Message };
+            Console.Error.WriteLine($"[SSO] GetSocialLoginEndpoint failed: {ex}");
+            return new GetSocialLoginEndpointResponse { Error = "An error occurred retrieving login options. Please try again." };
         }
     }
 
